@@ -1,0 +1,41 @@
+MEETING 2016-04-25
+
+SEMINAR
+explain the different reordering strategies: lexicalised reordering and preordering. This is to be like a lecture, and can be based motly on the textbook.
+
+
+
+DATA
+We should do German into English because Caroline and Petros know German well, and it is interesting for reordering. There has been a fair bit of work on this already. We should use the data on the STP servers, which is movie subtitles. This is good because the sentences are generally quite short, so it won't be such a difficult task. Don't bother training a huge system, since it will take too long to do anything. The data on the server is already tokenised, which saves us a bit of effort :)
+
+
+
+REPORT
+Should be 5-10 pages, but no real limit, quality over quantity. The report background should be similar to the seminar, but also more specific to the project we actually do, and include discussion of the relevant papers for what we do. 
+
+
+
+APPLY DIFFERENT APPROACHES
+LEXICALISED REORDERING: do this first. There are ways built into moses, several different kinds. 
+
+PREORDERING: do some reading on this. Doesn't have to be super complex. There have been some rule-based attempts. There may be some code in moses based on parse trees, Sara can't remember. Caroline thinks this will be way more interesting than lexical for German, because lots of long distance dependencies. Also, syntax is interesting. 
+
+
+
+COMPARE
+bleu score is mostly fine, so long as you discuss a bit how/why this is problematic for evaluating reordering. Try some other metrics, such as METEOR which might do better. There is a metric called LR score (if Caroline read her handwriting right...) that actually targets reordering, but this is a sod to implement so probably don't bother with it. Also do some extra comparison of a baseline (no explicit reordering model?) and the most interesting system you find, for example manually checking that all the verbs are still there/in the right place (Caroline/Petros should probably do this because German)
+
+
+
+INDIVIDUAL REPORT
+this is basically just for grading. Include in it exactly what you did. Reason about a research paper. 
+
+
+
+ADMIN
+We have arranged the next meeting for 2016-05-17 15:00 because Caroline likes to organise things. Here we will need to show we can both train a system. Caroline is away May 3-10, but will still be accessible online. 
+
+
+
+OTHER
+Write yourself a bash script for training the system! You will want to remember what you did, be able to repeat it, and be sure you have done all the steps in the right order. Leave this til after the next lab, since we will do that stuff then.
