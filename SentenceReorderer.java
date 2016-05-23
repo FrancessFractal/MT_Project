@@ -119,8 +119,8 @@ public class SentenceReorderer {
 
                 // insert head into second position in children ( or immediately after conj, whichever is easier to do)
 
-            parse.setChildren(children);
-        }
+            //parse.setChildren(children);
+        //}
 
         // recursively call this on the whole tree to perform rule on all Ss
         if ( ! parse.isLeaf() ) {
@@ -130,8 +130,6 @@ public class SentenceReorderer {
             }
         }
     }
-
-}
 
     public static void subject(Tree parse) {
         // do main logic of the rule here
@@ -172,22 +170,23 @@ public class SentenceReorderer {
                 // do the thing!
                 // move the PTKVZ child to immediately before V*FIN
 
-            parse.setChildren(children);
-            }
+            //parse.setChildren(children);
+        //}
 
         // recursively call this on the whole tree to perform rule on all Ss
         if ( ! parse.isLeaf() ) {
             Tree[] children = parse.children();
             for (Tree child : children) {
                 SentenceReorderer.particles(child);
-                }
             }
         }
+    }
 
     public static void infinitives(Tree parse) {
         // do main logic of the rule here
         // rule will happen for every node in tree meeting criteria below
-        parse = tree_flatten(parse)
+// commented out because it causes an exception of some sort and halts the program.
+//        parse = tree_flatten(parse);
         if (parse.label().value().equals("S")) {
 
             List<Tree> children = parse.getChildrenAsList();
@@ -206,7 +205,6 @@ public class SentenceReorderer {
             Tree[] children = parse.children();
             for (Tree child : children) {
                 SentenceReorderer.infinitives(child);
-                }
             }
         }
 
@@ -235,8 +233,7 @@ public class SentenceReorderer {
                 SentenceReorderer.negation(child);
             }
         }
-
-}
+    }
 
 
     public static Tree tree_flatten(Tree parse) {
@@ -246,3 +243,6 @@ public class SentenceReorderer {
                 // child.parent = parse.parent
             // remove the parse subtree from the sentence (delete this node or something)
         }
+        return null;
+    }
+}
