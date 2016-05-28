@@ -208,15 +208,38 @@ public class SentenceReorderer {
         // do main logic of the rule here
         // rule will happen for every node in tree meeting criteria below
 
-        //if (parse.label().value().equals("S")) {
-            // List<Tree> children = parse.getChildrenAsList();
+        if (parse.label().value().equals("S")) {
+            List<Tree> children = parse.getChildrenAsList();
+            if (children.size() == 0) return;
+
+            int v_loc = -1;
+            for (int i = 0; i < children.size(); i++) {
+                Tree child = children.get(i);
+                if (child.label().value().equals("VVFIN") ||
+                        child.label().value().equals("VAFIN") ||
+                        child.label().value().equals("VMFIN") ) {
+                    v_loc = i;
+                    break;
+                }
+            }
+
+            int p_loc = -1;
+            for (int i = 0; i < children.size(); i++) {
+                Tree child = children.get(i);
+                if (child.label().value().equals("PTKVZ") ) {
+                    p_loc = i;
+                    break;
+                }
+            }
+
             // if (child.label == "VVFIN" or "VAFIN" or "VMFIN") AND (child.label == "PTKVZ") in children  {
-
-                // do the thing!
+            if (p_loc > 0 && v_loc > 0) {
                 // move the PTKVZ child to immediately before V*FIN
+                SentenceReorderer.move_node(children, p_loc, v_loc);
+            }
 
-            //parse.setChildren(children);
-        //}
+            parse.setChildren(children);
+        }
 
         // recursively call this on the whole tree to perform rule on all Ss
         if ( ! parse.isLeaf() ) {
@@ -230,44 +253,124 @@ public class SentenceReorderer {
     public static void infinitives(Tree parse) {
         // do main logic of the rule here
         // rule will happen for every node in tree meeting criteria below
-// commented out because it causes an exception of some sort and halts the program.
-//        parse = tree_flatten(parse);
-        if (parse.label().value().equals("S")) {
+        SentenceReorderer.tree_flatten(parse);
+        SentenceReorderer.reorder_verbs(parse);
 
-            List<Tree> children = parse.getChildrenAsList();
-            // TODO: manipulate children
+    }
 
-                // if children contains (child.label == "VVFIN" or "VAFIN" or "VMFIN") = Tree vfin
-                // AND (child.label == "VVINF" or VVIMP VVIZU VVPP VAIMP VAINF VAPP VMINF VMPP) = Tree vnonfin
+    public static void tree_flatten(Tree parse) {
+        List<Tree> children = parse.getChildrenAsList();
 
-                    // move vnonfin to immediately after vfin
+        for (int i=0; i < children.size(); i++) {
+            Tree child = children.get(i);
 
-            parse.setChildren(children);
-        }
+            // for every VP child
+            if (child.label().value().equals("VP")) {
+                // remove VP node and make note of its former location
+                children.remove(i);
+                int vp_loc = i;
 
-        // recursively call this on the whole tree to perform rule on all Ss
-        if ( ! parse.isLeaf() ) {
-            Tree[] children = parse.children();
-            for (Tree child : children) {
-                SentenceReorderer.infinitives(child);
+                // go through all of VPs children
+                List<Tree> vps_children = child.getChildrenAsList();
+                for (Tree vps_child : vps_children) {
+                    // add each child to the location the VP node was in, maintaining the relative order
+                    children.add(vp_loc,vps_child);
+                    vp_loc++;
+                }
             }
         }
 
+        parse.setChildren(children);
+
+
+        // recursively call this on the whole tree to perform rule on all nodes
+        if ( ! parse.isLeaf() ) {
+            Tree[] children_recurse = parse.children();
+            for (Tree child : children_recurse) {
+                SentenceReorderer.tree_flatten(child);
+            }
+        }
+    }
+
+    public static void reorder_verbs(Tree parse) {
+        if (parse.label().value().equals("S")) {
+            List<Tree> children = parse.getChildrenAsList();
+
+            // find the location of the VFIN node
+            int vfin_loc = 0;
+            for ( ; vfin_loc < children.size(); vfin_loc++) {
+                Tree child = children.get(vfin_loc);
+                if (child.label().value().startsWith("V") &&
+                        child.label().value().endsWith("FIN")) {
+                    break;
+                }
+            }
+
+            int insertion_loc = vfin_loc + 1;
+            for (int i = 0; i < children.size(); i++) {
+                Tree child = children.get(i);
+                if (child.label().value().startsWith("V") &&
+                        ! child.label().value().endsWith("FIN")) {
+                    SentenceReorderer.move_node(children,i,insertion_loc);
+                    insertion_loc++;
+                }
+            }
+            parse.setChildren(children);
+        }
+
+
+        // recursively call this on the whole tree to perform rule on all nodes
+        if ( ! parse.isLeaf() ) {
+            Tree[] children_recurse = parse.children();
+            for (Tree child : children_recurse) {
+                SentenceReorderer.reorder_verbs(child);
+            }
+        }
     }
 
     public static void negation(Tree parse) {
         // do main logic of the rule here
         // rule will happen for every node in tree meeting criteria below
         if (parse.label().value().equals("S")) {
-
             List<Tree> children = parse.getChildrenAsList();
-            // TODO: manipulate children
+
+            // find the location of the VFIN node
+            int vfin_loc = 0;
+            while ( vfin_loc < children.size()) {
+                vfin_loc++;
+                Tree child = children.get(vfin_loc);
+                if (child.label().value().startsWith("V") &&
+                        child.label().value().endsWith("FIN")) {
+                    break;
+                }
+            }
+
+
+            List<String> verb_tags = Arrays.asList("VVINF", "VVIMP", "VVIZU", "VVPP", "VAIMP", "VAINF", "VAPP", "VMINF", "VMPP");
+
+            boolean has_vnonfin = false;
+            for (Tree child : children) {
+                if (verb_tags.contains(child.label().value())) {
+                    has_vnonfin = true;
+                    break;
+                }
+            }
+
+            if (has_vnonfin) {
+                for (int i = 0; i < children.size(); i++) {
+                    Tree child = children.get(i);
+                    if (child.label().value().equals("PTKNEG")) {
+                        // move negpart to immediately after vfin
+                        SentenceReorderer.move_node(children, i, vfin_loc + 1);
+                        break;
+                    }
+                }
+            }
 
             // if children contains (child.label == "VVFIN" or "VAFIN" or "VMFIN") = Tree vfin
             // AND (child.label == "VVINF" or VVIMP VVIZU VVPP VAIMP VAINF VAPP VMINF VMPP) = Tree vnonfin
             // AND (child.label == "PTKENEG") = negpart
 
-                // move negpart to immediately after vfin
 
             parse.setChildren(children);
         }
@@ -306,14 +409,4 @@ public class SentenceReorderer {
         return -1;
     }
 
-
-    public static Tree tree_flatten(Tree parse) {
-        if (parse.label().value().equals("VP")) {
-            List<Tree> children = parse.getChildrenAsList();
-            // for child in children:
-                // child.parent = parse.parent
-            // remove the parse subtree from the sentence (delete this node or something)
-        }
-        return null;
-    }
 }
