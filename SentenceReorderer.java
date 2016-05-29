@@ -292,27 +292,37 @@ public class SentenceReorderer {
         }
     }
 
+    public static int find_vfin(Tree parse) {
+        List<Tree> children = parse.getChildrenAsList();
+
+        // find the location of the VFIN node
+        int vfin_loc = 0;
+        while ( vfin_loc < children.size()) {
+            Tree child = children.get(vfin_loc);
+            if (child.label().value().startsWith("V") &&
+                    child.label().value().endsWith("FIN")) {
+                return vfin_loc;
+            }
+            vfin_loc++;
+        }
+        return -1;
+
+    }
+
     public static void reorder_verbs(Tree parse) {
         if (parse.label().value().equals("S")) {
             List<Tree> children = parse.getChildrenAsList();
 
             // find the location of the VFIN node
-            int vfin_loc = 0;
-            for ( ; vfin_loc < children.size(); vfin_loc++) {
-                Tree child = children.get(vfin_loc);
-                if (child.label().value().startsWith("V") &&
-                        child.label().value().endsWith("FIN")) {
-                    break;
-                }
-            }
-
-            int insertion_loc = vfin_loc + 1;
+            int insertion_loc = find_vfin(parse) + 1;
             for (int i = 0; i < children.size(); i++) {
                 Tree child = children.get(i);
                 if (child.label().value().startsWith("V") &&
                         ! child.label().value().endsWith("FIN")) {
                     SentenceReorderer.move_node(children,i,insertion_loc);
-                    insertion_loc++;
+                    if (insertion_loc <= i ) {
+                        insertion_loc++;
+                    }
                 }
             }
             parse.setChildren(children);
@@ -329,22 +339,22 @@ public class SentenceReorderer {
     }
 
     public static void negation(Tree parse) {
+
+
+        if ( ! parse.isLeaf() ) {
+            Tree[] children = parse.children();
+            for (Tree child : children) {
+                SentenceReorderer.negation(child);
+            }
+        }
+
         // do main logic of the rule here
         // rule will happen for every node in tree meeting criteria below
         if (parse.label().value().equals("S")) {
             List<Tree> children = parse.getChildrenAsList();
 
             // find the location of the VFIN node
-            int vfin_loc = 0;
-            while ( vfin_loc < children.size()) {
-                vfin_loc++;
-                Tree child = children.get(vfin_loc);
-                if (child.label().value().startsWith("V") &&
-                        child.label().value().endsWith("FIN")) {
-                    break;
-                }
-            }
-
+            int vfin_loc = find_vfin(parse);
 
             List<String> verb_tags = Arrays.asList("VVINF", "VVIMP", "VVIZU", "VVPP", "VAIMP", "VAINF", "VAPP", "VMINF", "VMPP");
 
@@ -373,13 +383,6 @@ public class SentenceReorderer {
 
 
             parse.setChildren(children);
-        }
-
-        if ( ! parse.isLeaf() ) {
-            Tree[] children = parse.children();
-            for (Tree child : children) {
-                SentenceReorderer.negation(child);
-            }
         }
     }
 
